@@ -151,11 +151,6 @@ hash = "70810061d41b8eb952f99ef365ba26d04ae6e08875da2adfe66d9a6b337128f2"
 metafile = true
 
 [[files]]
-file = "mods/voxy-server-side.pw.toml"
-hash = "820ee81e8c986e9a8a48e238ae457398f35e0a67f4519b1b7a264bceff6fa723"
-metafile = true
-
-[[files]]
 file = "mods/voxy.pw.toml"
 hash = "07401c57caa88b40745f1016c950cb950ad9deff3060a0bf06c2fff8b25c7c7c"
 metafile = true
