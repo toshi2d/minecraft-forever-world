@@ -1,0 +1,13 @@
+name = "Minecraft Forever World"
+author = "toshi2d"
+version = "1.0.0"
+pack-format = "packwiz:1.1.0"
+
+[index]
+file = "index.toml"
+hash-format = "sha256"
+hash = "00e78660b341edb879d3aa024f2eea217975ae2d3d8434465a0eea534511e14c"
+
+[versions]
+fabric = "0.19.2"
+minecraft = "26.1.2"

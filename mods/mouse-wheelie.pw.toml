@@ -1,0 +1,13 @@
+name = "Mouse Wheelie"
+filename = "mouse-wheelie-1.16.2+mc26.1.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/u5Ic2U1u/versions/rS46R0wu/mouse-wheelie-1.16.2%2Bmc26.1.jar"
+hash-format = "sha512"
+hash = "b109ac9a80313b5d2fe5c1e21b8c171c25a7d8bd65b940ecaa1e18bc6f91a7c98c54f014ac2f953b2a5a32352bd72eeffbc69ffffbfd0400135867967a08bdf6"
+
+[update]
+[update.modrinth]
+mod-id = "u5Ic2U1u"
+version = "rS46R0wu"
