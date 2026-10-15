@@ -3,13 +3,9 @@
   "buildNumber": 41,
   "loadlist": [
     {
-      "name": "LocalSkin",
-      "type": "Legacy",
-      "checkPNG": false,
-      "skin": "LocalSkin/skins/{USERNAME}.png",
-      "model": "auto",
-      "cape": "LocalSkin/capes/{USERNAME}.png",
-      "elytra": "LocalSkin/elytras/{USERNAME}.png"
+      "name": "ForeverWorld",
+      "type": "CustomSkinAPI",
+      "root": "https://server.tail9c8ab.ts.net:8444/"
     },
     {
       "name": "Mojang",
@@ -27,5 +23,5 @@
   "forceUpdateSkull": false,
   "enableLocalProfileCache": false,
   "enableCacheAutoClean": false,
-  "forceDisableCache": false
+  "forceDisableCache": true
 }

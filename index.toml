@@ -2,7 +2,7 @@ hash-format = "sha256"
 
 [[files]]
 file = "CustomSkinLoader/CustomSkinLoader.json"
-hash = "7092f2c6203183cd4f91c7e41e8da54e4a2a4b4589ee95056b5a19895873e255"
+hash = "9dfeeec409590d323c86a2e9328ebb11107a45e3732914dd27b80a1281923e75"
 
 [[files]]
 file = "forever-world/ForeverWorldCheck.class"
