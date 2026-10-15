@@ -1,6 +1,10 @@
 hash-format = "sha256"
 
 [[files]]
+file = "CustomSkinLoader/CustomSkinLoader.json"
+hash = "7092f2c6203183cd4f91c7e41e8da54e4a2a4b4589ee95056b5a19895873e255"
+
+[[files]]
 file = "forever-world/ForeverWorldCheck.class"
 hash = "05b7d94bfc05491553df11602eb4d639bbfe98ddd21d274f4220eef12fe767d1"
 
@@ -11,6 +15,11 @@ hash = "127ed2d120887798c4b9755370715448589fd88d92d0d17f1c73da6ec7f77bba"
 [[files]]
 file = "forever-world/mmc-pack.json"
 hash = "e620147081aa6d382bce51ac7244a1d387b618f4f9a8a698633950b7a729a50c"
+
+[[files]]
+file = "mods/customskinloader.pw.toml"
+hash = "6dc69e48da9a2dadcce285602296efc868b9e429ff3c7cc7a4e99c5dcd10e61a"
+metafile = true
 
 [[files]]
 file = "mods/distanthorizons.pw.toml"
