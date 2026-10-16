@@ -6,12 +6,6 @@
       "name": "ForeverWorld",
       "type": "CustomSkinAPI",
       "root": "https://server.tail9c8ab.ts.net:8444/"
-    },
-    {
-      "name": "Mojang",
-      "type": "MojangAPI",
-      "apiRoot": "https://api.mojang.com/",
-      "sessionRoot": "https://sessionserver.mojang.com/"
     }
   ],
   "enableTransparentSkin": true,
