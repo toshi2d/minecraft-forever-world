@@ -1,0 +1,65 @@
+name: pre-launch check
+# Runs the Forever World pre-launch check (forever-world/ForeverWorldCheck.class, source src/) headless on all three
+# desktop OSes: unit tests (tiers, memory policy, "player changed it" ledger, parsers), end-to-end runs against fake
+# instances with fake hardware, and a run with the real hardware probes of each runner (no GPU -> unknown path).
+on:
+  push:
+    paths: ["src/**", "test/**", "forever-world/**", ".github/workflows/check.yml"]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        java: ["17", "25"]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - name: Shipped class is one Java 17 class file
+        run: |
+          ls forever-world/*.class
+          test "$(ls forever-world/*.class | wc -l | tr -d ' ')" = 1
+          javap -v forever-world/ForeverWorldCheck.class | grep -q "major version: 61"
+      - name: Compile source (--release 17) and tests
+        run: |
+          javac --release 17 -Xlint:all -d build src/ForeverWorldCheck.java
+          test "$(ls build/*.class | wc -l | tr -d ' ')" = 1
+          javac --release 17 -cp build -d test-build test/CheckTest.java
+      - name: Unit + end-to-end tests (shipped class)
+        run: java -cp "build${{ runner.os == 'Windows' && ';' || ':' }}test-build" CheckTest forever-world forever-world/tiers.json
+      - name: Real hardware probes (--detect)
+        run: |
+          FW_TEST_TIERS="$(cat forever-world/tiers.json)" java -cp forever-world ForeverWorldCheck --detect | tee detect.json
+          FW_TEST_TIERS="$(cat forever-world/tiers.json)" java -Djava.awt.headless=true -cp forever-world ForeverWorldCheck --detect > detect-headless.json
+          grep -q '"tier"' detect.json
+      - name: Full check on a fake instance with real probes
+        run: |
+          I="$RUNNER_TEMP/inst"; mkdir -p "$I/minecraft/mods" "$I/minecraft/config"
+          printf '{"components":[{"uid": "net.minecraft", "version": "26.3"}]}' > "$I/mmc-pack.json"
+          printf '[General]\nOverrideMemory=false\nJvmArgs=-XX:+UseZGC\nOverrideJavaArgs=true\nname=ci\n' > "$I/instance.cfg"
+          printf 'renderDistance:12\nmaxFps:120\n' > "$I/minecraft/options.txt"
+          export INST_DIR="$I" INST_MC_DIR="$I/minecraft" FW_TEST_MMC_PACK="$(cat "$I/mmc-pack.json")" FW_TEST_CFG="$(cat forever-world/instance-cfg.properties)" \
+                 FW_TEST_TIERS="$(cat forever-world/tiers.json)" FW_TEST_NO_SYNC=1 FW_TEST_NO_POPUP=1 FW_TEST_NO_WATCH=1
+          set +e
+          java -cp forever-world ForeverWorldCheck; a=$?
+          java -cp forever-world ForeverWorldCheck; b=$?
+          java -cp forever-world ForeverWorldCheck; c=$?
+          set -e
+          echo "exit codes: $a $b $c"
+          cat "$I/minecraft/forever-world/check.log"
+          echo "--- instance.cfg"; cat "$I/instance.cfg"
+          echo "--- options.txt"; cat "$I/minecraft/options.txt"
+          echo "--- DistantHorizons.toml"; cat "$I/minecraft/config/DistantHorizons.toml"
+          echo "--- fw-managed.json"; cat "$I/minecraft/forever-world/fw-managed.json"
+          test "$a$b$c" = "110"
+          grep -q '^OverrideMemory=true' "$I/instance.cfg"
+          grep -q '^MaxMemAlloc=' "$I/instance.cfg"
