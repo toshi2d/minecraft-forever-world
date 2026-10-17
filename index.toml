@@ -6,7 +6,7 @@ hash = "d4051d41e6f2e9a75c072e26c33ee983f31d4898ffcca4af1e79d75b30aca1ac"
 
 [[files]]
 file = "forever-world/ForeverWorldCheck.class"
-hash = "320db1c5acad6b318ffdcc6b1d526837760415934febf94fd4766e16f64640b2"
+hash = "a3c8be97ff38fdf81612cf2325cc70ccfb73c20b3dd1cc4cfc5724279821212b"
 
 [[files]]
 file = "forever-world/instance-cfg.properties"
@@ -18,7 +18,7 @@ hash = "e620147081aa6d382bce51ac7244a1d387b618f4f9a8a698633950b7a729a50c"
 
 [[files]]
 file = "forever-world/tiers.json"
-hash = "fb931e7ca127fc4954181f84420edc93f77fce409f3e3388c2d53773e3afca36"
+hash = "528fe2af31b453e4a3c5a3096c910b551f9865567a0b4cadf689d651630b304c"
 
 [[files]]
 file = "mods/customskinloader.pw.toml"

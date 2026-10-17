@@ -29,6 +29,17 @@ jobs:
           ls forever-world/*.class
           test "$(ls forever-world/*.class | wc -l | tr -d ' ')" = 1
           javap -v forever-world/ForeverWorldCheck.class | grep -q "major version: 61"
+      - name: packwiz hashes match the files (index.toml, pack.toml)
+        if: runner.os == 'Linux'
+        run: |
+          python3 - <<'PY'
+          import hashlib, re, sys
+          sha = lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest()
+          bad = [f for f, h in re.findall(r'file = "([^"]+)"\nhash = "([0-9a-f]+)"', open("index.toml").read()) if sha(f) != h]
+          if re.search(r'\[index\][^\[]*?hash = "([0-9a-f]+)"', open("pack.toml").read()).group(1) != sha("index.toml"): bad.append("pack.toml index hash")
+          print("stale hashes:", bad) if bad else print("all packwiz hashes match")
+          sys.exit(1 if bad else 0)
+          PY
       - name: Compile source (--release 17) and tests
         run: |
           javac --release 17 -Xlint:all -d build src/ForeverWorldCheck.java
