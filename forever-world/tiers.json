@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "_comment": "Per-PC defaults applied by ForeverWorldCheck. First tier whose 'when' matches wins; a value is written only if the player never changed it (ledger forever-world/fw-managed.json in the instance). gpu_class: discrete | integrated | apple | unknown. Unknown hardware never satisfies a min_* rule.",
+  "memory": {
+    "_comment": "MaxMemAlloc = fraction x nominal RAM (reported RAM rounded UP to nominal_round_mb, e.g. 15 GiB usable -> 16 GiB), rounded to round_mb, clamped to [floor_mb, cap_mb]. Set via Prism's own keys (OverrideMemory/MaxMemAlloc/MinMemAlloc), never -Xmx in JvmArgs.",
+    "fraction": 0.5,
+    "nominal_round_mb": 2048,
+    "round_mb": 512,
+    "floor_mb": 3072,
+    "cap_mb": 8192,
+    "min_mb": 1024
+  },
+  "fps": {
+    "_comment": "FPS-Sync installed -> options.txt maxFps = fps_sync_value (its 'sync to monitor' slider position). Without it -> maxFps = detected refresh rate clamped to [min, max]; unknown refresh -> left alone.",
+    "fps_sync_jar_prefix": "fps-sync",
+    "fps_sync_value": -10,
+    "min": 30,
+    "max": 260
+  },
+  "adopt_defaults": {
+    "_comment": "Instance without a ledger entry: a key is taken over only if it is missing or still equals one of these defaults (vanilla / the old zip). Anything else is the player's and is never touched.",
+    "options.txt:renderDistance": ["12"],
+    "options.txt:simulationDistance": ["12"],
+    "options.txt:maxFps": ["120"],
+    "DistantHorizons.toml:lodChunkRenderDistanceRadius": ["96"],
+    "DistantHorizons.toml:maxHorizontalResolution": ["\"HALF_CHUNK\""],
+    "DistantHorizons.toml:numberOfThreads": ["4"]
+  },
+  "tiers": [
+    {
+      "name": "ultra",
+      "when": {"min_ram_mb": 15000, "min_threads": 8, "gpu_class": ["discrete"], "min_vram_mb": 11000},
+      "renderDistance": 12, "simulationDistance": 12,
+      "dh": {"lodChunkRenderDistanceRadius": 256, "maxHorizontalResolution": "BLOCK", "numberOfThreads": 8}
+    },
+    {
+      "name": "high",
+      "when": {"min_ram_mb": 15000, "min_threads": 6, "gpu_class": ["discrete", "apple"], "min_vram_mb": 7500},
+      "renderDistance": 12, "simulationDistance": 10,
+      "dh": {"lodChunkRenderDistanceRadius": 160, "maxHorizontalResolution": "BLOCK", "numberOfThreads": 6}
+    },
+    {
+      "name": "mid",
+      "when": {"min_ram_mb": 7500, "min_threads": 4, "gpu_class": ["discrete", "apple", "unknown"]},
+      "renderDistance": 8, "simulationDistance": 6,
+      "dh": {"lodChunkRenderDistanceRadius": 96, "maxHorizontalResolution": "HALF_CHUNK", "numberOfThreads": 4}
+    },
+    {
+      "name": "potato",
+      "when": {},
+      "renderDistance": 6, "simulationDistance": 5,
+      "dh": {"lodChunkRenderDistanceRadius": 48, "maxHorizontalResolution": "FOUR_BLOCKS", "numberOfThreads": 2}
+    }
+  ],
+  "dh_keys": {
+    "_comment": "Where each DH key lives in config/DistantHorizons.toml (section header). Key or section missing in an existing file -> skipped and logged.",
+    "lodChunkRenderDistanceRadius": "client.advanced.graphics.quality",
+    "maxHorizontalResolution": "client.advanced.graphics.quality",
+    "numberOfThreads": "common.multiThreading"
+  }
+}

@@ -1,0 +1,8 @@
+# Not part of the pack players download: source, tests, CI
+src/
+test/
+.github/
+build/
+test-build/
+.gitignore
+README.md

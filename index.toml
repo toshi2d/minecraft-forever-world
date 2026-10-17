@@ -6,7 +6,7 @@ hash = "d4051d41e6f2e9a75c072e26c33ee983f31d4898ffcca4af1e79d75b30aca1ac"
 
 [[files]]
 file = "forever-world/ForeverWorldCheck.class"
-hash = "05b7d94bfc05491553df11602eb4d639bbfe98ddd21d274f4220eef12fe767d1"
+hash = "320db1c5acad6b318ffdcc6b1d526837760415934febf94fd4766e16f64640b2"
 
 [[files]]
 file = "forever-world/instance-cfg.properties"
@@ -15,6 +15,10 @@ hash = "127ed2d120887798c4b9755370715448589fd88d92d0d17f1c73da6ec7f77bba"
 [[files]]
 file = "forever-world/mmc-pack.json"
 hash = "e620147081aa6d382bce51ac7244a1d387b618f4f9a8a698633950b7a729a50c"
+
+[[files]]
+file = "forever-world/tiers.json"
+hash = "fb931e7ca127fc4954181f84420edc93f77fce409f3e3388c2d53773e3afca36"
 
 [[files]]
 file = "mods/customskinloader.pw.toml"
@@ -27,6 +31,11 @@ hash = "8cfd619edd7190fdd7f048bc7815193699d0583857f988e421b8e7816167ad25"
 metafile = true
 
 [[files]]
+file = "mods/entityculling.pw.toml"
+hash = "29f920b8bdac98a1a1d9e6454d0c3b4d0eb1f3779f2fea7b7df177b2163e5d61"
+metafile = true
+
+[[files]]
 file = "mods/fabric-api.pw.toml"
 hash = "5650bba7cb2d17f5ac1c543ee6c0d72560624aa530e1dc51d2aa9772e96d991a"
 metafile = true
@@ -34,6 +43,11 @@ metafile = true
 [[files]]
 file = "mods/ferrite-core.pw.toml"
 hash = "069d81cab53c0141459ad4d70bcf3e10f17652f24cc62d3b4a0fc2cd2b700871"
+metafile = true
+
+[[files]]
+file = "mods/fps-sync.pw.toml"
+hash = "6bd4c211449bd1f0450499c127652c663e0bf1500524c9c1a7cfd5e0ba8df7ae"
 metafile = true
 
 [[files]]

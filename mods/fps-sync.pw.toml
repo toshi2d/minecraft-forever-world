@@ -1,0 +1,13 @@
+name = "FPS-Sync (FPS Limiter)"
+filename = "fps-sync-1.0.0+26.3.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/qmsc5TAr/versions/vJSj5RPB/fps-sync-1.0.0%2B26.3.jar"
+hash-format = "sha512"
+hash = "15b75ade0010335dbbf5ffc6786e3a8f604b0da158857fcfa4833b68497592633298c3b20b67eb2b07b6b5b737fba96674f70c2fd8ff1729fbbe284c73c7c786"
+
+[update]
+[update.modrinth]
+mod-id = "qmsc5TAr"
+version = "vJSj5RPB"
