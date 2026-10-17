@@ -45,7 +45,7 @@ jobs:
         run: |
           I="$RUNNER_TEMP/inst"; mkdir -p "$I/minecraft/mods" "$I/minecraft/config"
           printf '{"components":[{"uid": "net.minecraft", "version": "26.3"}]}' > "$I/mmc-pack.json"
-          printf '[General]\nOverrideMemory=false\nJvmArgs=-XX:+UseZGC\nOverrideJavaArgs=true\nname=ci\n' > "$I/instance.cfg"
+          printf '[General]\nOverrideMemory=false\nJvmArgs=-XX:+UseZGC\nOverrideJavaArgs=true\nname=ci\n\n[UI]\nmods_Page\\Columns=x\n' > "$I/instance.cfg"
           printf 'renderDistance:12\nmaxFps:120\n' > "$I/minecraft/options.txt"
           export INST_DIR="$I" INST_MC_DIR="$I/minecraft" FW_TEST_MMC_PACK="$(cat "$I/mmc-pack.json")" FW_TEST_CFG="$(cat forever-world/instance-cfg.properties)" \
                  FW_TEST_TIERS="$(cat forever-world/tiers.json)" FW_TEST_NO_SYNC=1 FW_TEST_NO_POPUP=1 FW_TEST_NO_WATCH=1
@@ -58,8 +58,13 @@ jobs:
           cat "$I/minecraft/forever-world/check.log"
           echo "--- instance.cfg"; cat "$I/instance.cfg"
           echo "--- options.txt"; cat "$I/minecraft/options.txt"
-          echo "--- DistantHorizons.toml"; cat "$I/minecraft/config/DistantHorizons.toml"
+          echo "--- DistantHorizons.toml"; cat "$I/minecraft/config/DistantHorizons.toml" 2>/dev/null || echo "(not created: DH writes its own file on first start)"
           echo "--- fw-managed.json"; cat "$I/minecraft/forever-world/fw-managed.json"
           test "$a$b$c" = "110"
           grep -q '^OverrideMemory=true' "$I/instance.cfg"
           grep -q '^MaxMemAlloc=' "$I/instance.cfg"
+          # Prism reads memory only from [General]; keys after [UI] are ignored
+          awk '/^\[UI\]/{exit} /^MaxMemAlloc=/{f=1} END{exit !f}' "$I/instance.cfg"
+          if awk '/^\[UI\]/{u=1} u && /MemAlloc|OverrideMemory/{f=1} END{exit !f}' "$I/instance.cfg"; then echo "memory keys under [UI]"; exit 1; fi
+          test ! -e "$I/minecraft/config/DistantHorizons.toml"
+          grep -q 'DistantHorizons.toml not there yet' "$I/minecraft/forever-world/check.log"

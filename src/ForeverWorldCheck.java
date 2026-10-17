@@ -55,27 +55,63 @@ public class ForeverWorldCheck {
         return out;
     }
 
+    /** True for Prism's top-level INI section: [General], or lines before any section header (old MultiMC files). */
+    static boolean generalSection(String sec) { return sec.isEmpty() || sec.equals("General"); }
+
+    /**
+     * key=value pairs of a Prism instance.cfg (or a section-less .properties file). instance.cfg is INI: only keys in
+     * [General] (or before the first header) are instance settings; the same key under [UI] is "UI/key" to Prism and
+     * ignored, so it is skipped here.
+     */
     static Map<String, String> props(String text) {
         Map<String, String> out = new LinkedHashMap<>();
+        String sec = "";
         for (String line : text.split("\\R")) {
             String l = line.strip();
-            if (l.isEmpty() || l.startsWith("#") || l.startsWith("[") || !l.contains("=")) continue;
+            if (l.startsWith("[") && l.endsWith("]")) { sec = l.substring(1, l.length() - 1).strip(); continue; }
+            if (l.isEmpty() || l.startsWith("#") || l.startsWith(";") || !l.contains("=") || !generalSection(sec)) continue;
             int i = l.indexOf('=');
             out.put(l.substring(0, i).strip(), l.substring(i + 1).strip());
         }
         return out;
     }
 
+    /**
+     * Write allow-listed keys into instance.cfg under [General]. A key we write that sits in another section (an earlier
+     * script appended memory keys at the end of the file, i.e. into [UI], where Prism ignores them) is removed there and
+     * written under [General]. Keys missing from [General] go right after the [General] header.
+     */
     static String applyCfg(String cfg, Map<String, String> want) {
-        String out = cfg;
-        if (!Pattern.compile("(?m)^\\[General\\]\\s*$").matcher(out).find()) out = "[General]\n" + out;
-        for (Map.Entry<String, String> e : want.entrySet()) {
-            if (!WRITABLE_CFG.contains(e.getKey())) { log("ignoring cfg key not on the allow-list: " + e.getKey()); continue; }
-            Matcher m = Pattern.compile("(?m)^" + Pattern.quote(e.getKey()) + "=.*$").matcher(out);
-            String line = e.getKey() + "=" + e.getValue();
-            out = m.find() ? m.replaceFirst(Matcher.quoteReplacement(line)) : out.replaceFirst("(?m)^\\[General\\]\\s*$", "[General]\n" + Matcher.quoteReplacement(line));
+        Map<String, String> w = new LinkedHashMap<>();
+        for (Map.Entry<String, String> e : want.entrySet())
+            if (WRITABLE_CFG.contains(e.getKey())) w.put(e.getKey(), e.getValue());
+            else log("ignoring cfg key not on the allow-list: " + e.getKey());
+        List<String> lines = new ArrayList<>(cfg.isEmpty() ? List.of() : Arrays.asList(cfg.split("\\R", -1)));
+        if (!lines.isEmpty() && lines.get(lines.size() - 1).isEmpty()) lines.remove(lines.size() - 1);
+        int general = -1;
+        for (int i = 0; i < lines.size(); i++) if (lines.get(i).strip().equals("[General]")) { general = i; break; }
+        if (general < 0) { lines.add(0, "[General]"); general = 0; }
+        Set<String> done = new HashSet<>();
+        String sec = "";
+        List<String> out = new ArrayList<>();
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i), l = line.strip();
+            if (l.startsWith("[") && l.endsWith("]")) { sec = l.substring(1, l.length() - 1).strip(); out.add(line); continue; }
+            int eq = l.indexOf('=');
+            String k = eq > 0 && !l.startsWith("#") && !l.startsWith(";") ? l.substring(0, eq).strip() : null;
+            if (k != null && w.containsKey(k)) {
+                if (generalSection(sec) && !done.contains(k)) { out.add(k + "=" + w.get(k)); done.add(k); continue; }
+                if (!generalSection(sec)) log("instance.cfg: " + k + " was under [" + sec + "] where Prism ignores it; moved to [General]");
+                continue; // misplaced or duplicate copy of a key we write: drop it
+            }
+            out.add(line);
         }
-        return out;
+        int gi = 0;
+        for (int i = 0; i < out.size(); i++) if (out.get(i).strip().equals("[General]")) { gi = i; break; }
+        List<String> add = new ArrayList<>();
+        for (Map.Entry<String, String> e : w.entrySet()) if (!done.contains(e.getKey())) add.add(e.getKey() + "=" + e.getValue());
+        out.addAll(gi + 1, add);
+        return String.join("\n", out) + "\n";
     }
 
     static boolean cfgDiffers(String cfg, Map<String, String> want) {
@@ -503,6 +539,35 @@ public class ForeverWorldCheck {
         return Math.max(floor, Math.min(cap, v));
     }
 
+    /**
+     * A thread count that scales with the PC: ceil(threads x threads_fraction) clamped to [min, max] and to the PC's
+     * threads (DH's own presets use the same ceil(): BALANCED = 0.5 is its default, AGGRESSIVE = 0.75). Unknown -> min.
+     */
+    static long threadsFor(Map<String, Object> spec, double threads) {
+        long min = (long) num(spec.get("min"), 1), max = (long) num(spec.get("max"), 64);
+        if (threads <= 0) return min;
+        long v = (long) Math.ceil(threads * num(spec.get("threads_fraction"), 0.5));
+        return Math.max(1, Math.min((long) threads, Math.max(min, Math.min(max, v))));
+    }
+
+    /**
+     * DH key -> values that count as "never touched": DH's own default (dh_defaults; a {threads_fraction} spec is DH's
+     * thread default for this PC) plus the old zip defaults from adopt_defaults. Strings are TOML-quoted as in the file.
+     */
+    static Map<String, Set<String>> dhUntouched(Map<String, Object> tiers, Map<String, Object> hw) {
+        Map<String, Set<String>> out = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> e : obj(tiers.get("dh_defaults")).entrySet()) {
+            if (e.getKey().startsWith("_")) continue;
+            Object v = e.getValue();
+            String lit = v instanceof Map ? Long.toString(threadsFor(obj(v), num(hw.get("threads"), -1))) : v instanceof String ? "\"" + v + "\"" : str(v);
+            out.computeIfAbsent(e.getKey(), k -> new LinkedHashSet<>()).add(lit);
+        }
+        for (Map.Entry<String, Object> e : obj(tiers.get("adopt_defaults")).entrySet())
+            if (e.getKey().startsWith("DistantHorizons.toml:"))
+                for (Object o : arr(e.getValue())) out.computeIfAbsent(e.getKey().substring("DistantHorizons.toml:".length()), k -> new LinkedHashSet<>()).add(str(o));
+        return out;
+    }
+
     /** file -> key -> desired value (as stored in that file). */
     static Map<String, Map<String, String>> desired(Map<String, Object> tiers, Map<String, Object> tier, Map<String, Object> hw, boolean fpsSyncInstalled) {
         Map<String, Map<String, String>> d = new LinkedHashMap<>();
@@ -524,7 +589,8 @@ public class ForeverWorldCheck {
         d.put("options.txt", opt);
         Map<String, String> dh = new LinkedHashMap<>();
         for (Map.Entry<String, Object> e : obj(tier.get("dh")).entrySet())
-            dh.put(e.getKey(), e.getValue() instanceof String ? "\"" + e.getValue() + "\"" : str(e.getValue()));
+            dh.put(e.getKey(), e.getValue() instanceof Map ? Long.toString(threadsFor(obj(e.getValue()), num(hw.get("threads"), -1)))
+                : e.getValue() instanceof String ? "\"" + e.getValue() + "\"" : str(e.getValue()));
         d.put("DistantHorizons.toml", dh);
         return d;
     }
@@ -682,15 +748,6 @@ public class ForeverWorldCheck {
         return String.join("\n", lines);
     }
 
-    static String newToml(Map<String, String> write, Map<String, String> keySection) {
-        Map<String, List<String>> bySec = new LinkedHashMap<>();
-        for (Map.Entry<String, String> e : write.entrySet())
-            bySec.computeIfAbsent(keySection.get(e.getKey()), s -> new ArrayList<>()).add("\t" + e.getKey() + " = " + e.getValue());
-        StringBuilder b = new StringBuilder();
-        for (Map.Entry<String, List<String>> e : bySec.entrySet()) b.append("[").append(e.getKey()).append("]\n").append(String.join("\n", e.getValue())).append("\n\n");
-        return b.toString();
-    }
-
     static void backup(Path f, long stamp) {
         try { if (Files.exists(f)) Files.copy(f, f.resolveSibling(f.getFileName() + ".bak-fw-" + stamp), StandardCopyOption.REPLACE_EXISTING); } catch (Exception ignore) { }
     }
@@ -786,25 +843,30 @@ public class ForeverWorldCheck {
             Map<String, String> wantDh = new LinkedHashMap<>();
             for (Map.Entry<String, String> en : want.get("DistantHorizons.toml").entrySet())
                 if (ks.containsKey(en.getKey())) wantDh.put(en.getKey(), en.getValue()); else log("DH key " + en.getKey() + " has no section in tiers.json dh_keys; skipped");
-            if (Files.exists(f)) {
+            if (!Files.exists(f)) {
+                // DH writes its full config on its first start. Writing a partial file ourselves could be reset by DH's
+                // config-version check and would then look like the player's change: wait for DH's own file.
+                log("DistantHorizons.toml not there yet (DH creates it on its first start); Distant Horizons tuning on the next launch");
+            } else {
                 String text = Files.readString(f);
+                boolean full = Pattern.compile("(?m)^\\s*_version\\s*=").matcher(text).find();
                 Map<String, String> cur = tomlValues(text, ks);
                 Map<String, String> present = new LinkedHashMap<>();
+                List<String> notYet = new ArrayList<>();
                 for (Map.Entry<String, String> en : wantDh.entrySet())
                     if (cur.containsKey(en.getKey())) present.put(en.getKey(), en.getValue());
-                    else log("DistantHorizons.toml has no " + en.getKey() + " under [" + ks.get(en.getKey()) + "] (renamed by a DH update?); skipped");
-                Map<String, String> w = decide(ledger, "DistantHorizons.toml", cur, present, adopt, Set.of(), tn, tv, Map.of());
+                    else if (full) log("DistantHorizons.toml has no " + en.getKey() + " under [" + ks.get(en.getKey()) + "] (renamed by a DH update?); skipped");
+                    else notYet.add(en.getKey());
+                if (!notYet.isEmpty()) log("DistantHorizons.toml is a partial file (no _version: DH has not saved its full config yet); next launch: " + notYet);
+                Map<String, Set<String>> untouched = dhUntouched(tiers, hw);
+                Map<String, Object> adoptDh = new LinkedHashMap<>(adopt);
+                for (Map.Entry<String, Set<String>> en : untouched.entrySet()) adoptDh.put("DistantHorizons.toml:" + en.getKey(), new ArrayList<Object>(en.getValue()));
+                // A value back at DH's default after we wrote ours = DH reset its config (version bump), not the player.
+                Map<String, String> w = decide(ledger, "DistantHorizons.toml", cur, present, adoptDh, Set.of(), tn, tv, untouched);
                 if (!w.isEmpty()) {
                     backup(f, stamp);
                     Files.writeString(f, applyToml(text, w, ks), StandardCharsets.UTF_8);
                     log("DistantHorizons.toml set for this PC: " + w);
-                }
-            } else {
-                Map<String, String> w = decide(ledger, "DistantHorizons.toml", Map.of(), wantDh, adopt, Set.of(), tn, tv, Map.of());
-                if (!w.isEmpty()) {
-                    Files.createDirectories(f.getParent());
-                    Files.writeString(f, newToml(w, ks), StandardCharsets.UTF_8);
-                    log("DistantHorizons.toml created for this PC: " + w);
                 }
             }
         } catch (Throwable t) { log("Distant Horizons tuning skipped: " + t); }
